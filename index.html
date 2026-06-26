@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>O.C.E.A.N Case Manager</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header class="top">
+  <h1>O.C.E.A.N</h1>
+  <p>Optimized Compliance Electronic and Analysis Network - case management for Regulation E and related dispute workflows.</p>
+  <div class="tabs">
+    <button class="active" onclick="tab('dashboard',this)">Dashboard</button>
+    <button onclick="tab('review',this)">Review</button>
+    <button onclick="tab('manager',this)">Manager Review</button>
+    <button onclick="tab('audit',this)">Audit Log</button>
+    <button id="ledgerTabButton" onclick="tab('ledger',this)">Provisional Ledger</button>
+    <button onclick="tab('rules',this)">Rules Engine</button>
+    <button class="plusTab" title="Create New Case" onclick="startNewCase(this)">+</button>
+  </div>
+</header>
+<div class="wrap">
+  <aside id="sideQueue" class="card">
+    <div class="pad between">
+      <div><h2>Case Queue</h2><p class="muted" id="queueContextText">Queue updates based on selected tab.</p></div>
+      <div class="row"><button class="secondary" onclick="importCaseJsonPrompt()">Import JSON</button><button class="secondary" onclick="exportAllCasesJson()">Export Backup</button><button class="secondary" onclick="resetDemo()">Reset</button></div><input id="jsonImportInput" type="file" accept="application/json,.json" multiple style="display:none" onchange="importCasesJson(event)">
+    </div>
+    <div class="queueMode"><span class="muted">Current queue:</span> <span id="queueModeLabel" class="contextTitle">Dashboard / All Cases</span></div>
+    <div id="queueRegEControls" class="queueTabs">
+      <button id="qAll" class="active" onclick="setQueueFilter('all')">All Cases</button>
+      <button id="qRegE" onclick="setQueueFilter('regE')">Reg E</button>
+      <button id="qNonRegE" onclick="setQueueFilter('nonRegE')">Non Reg E</button>
+    </div>
+    <div class="dateFilters">
+      <div><label>From date</label><input id="queueDateFrom" type="date" onchange="render()"></div>
+      <div><label>To date</label><input id="queueDateTo" type="date" onchange="render()"></div>
+    </div>
+    <div class="dateFilters">
+      <div><label>Case type</label><select id="queueTxnTypeFilter" onchange="render()"><option value="">All transaction types</option><option>Zelle / P2P</option><option>ACH Debit</option><option>Debit Card POS</option><option>ATM Withdrawal</option><option>Online Banking Transfer</option><option>Wire Transfer</option><option>Check</option><option>Credit Card</option></select></div>
+      <div><label>Error type</label><select id="queueClaimTypeFilter" onchange="render()"><option value="">All error types</option><option>Unauthorized transaction</option><option>Lost or stolen card</option><option>ATM cash not received</option><option>Duplicate transaction</option><option>Incorrect amount</option><option>Customer-authorized scam</option><option>Service not received</option></select></div>
+    </div>
+    <div id="caseList"></div>
+  </aside>
+  <main>
+    <section id="dashboard" class="view active">
+      <div class="four">
+        <div class="card kpi"><span class="muted">Open Cases</span><strong id="kOpen">0</strong></div>
+        <div class="card kpi"><span class="muted">Officer Review</span><strong id="kOfficer">0</strong></div>
+        <div class="card kpi"><span class="muted">Manager Pending</span><strong id="kManager">0</strong></div>
+        <div class="card kpi"><span class="muted">Audit Ready</span><strong id="kAudit">0</strong></div>
+      </div>
+      <div class="card pad">
+        <h2>Investigator Workbench</h2>
+        <div class="dashboardFilters">
+          <div class="two">
+            <div><label>Dashboard from date</label><input id="dashboardDateFrom" type="date" onchange="renderDashboard()"></div>
+            <div><label>Dashboard to date</label><input id="dashboardDateTo" type="date" onchange="renderDashboard()"></div>
+          </div>
+          <div class="two">
+            <div><label>Case type</label><select id="dashboardTxnTypeFilter" onchange="setDashboardFilter('txnType',this.value)"><option value="">All transaction types</option><option>Zelle / P2P</option><option>ACH Debit</option><option>Debit Card POS</option><option>ATM Withdrawal</option><option>Online Banking Transfer</option><option>Wire Transfer</option><option>Check</option><option>Credit Card</option></select></div>
+            <div><label>Error type</label><select id="dashboardClaimTypeFilter" onchange="setDashboardFilter('claimType',this.value)"><option value="">All error types</option><option>Unauthorized transaction</option><option>Lost or stolen card</option><option>ATM cash not received</option><option>Duplicate transaction</option><option>Incorrect amount</option><option>Customer-authorized scam</option><option>Service not received</option></select></div>
+          </div>
+          <p class="muted">Date filters use the notice received date. Case type uses the claim transaction type.</p>
+        </div>
+        <table id="workbench"></table>
+      </div>
+    </section>
+    <section id="intake" class="view">
+      <div class="card pad">
+        <h2 id="intakeTitle">Create New Case</h2><div id="editBanner" class="editBanner"></div><p class="muted">A case can originate from the bank mobile app or from a customer phone call.</p>
+        <div class="split">
+          <form id="caseForm" onsubmit="createCase(event)">
+            <div class="two"><div><label>Intake source</label><select id="source" onchange="liveCalc()"><option>Bank Mobile App</option><option>Customer Phone Call</option><option>Branch Walk-In</option><option>Back Office Referral</option></select></div><div><label>Officer / intake rep</label><input id="intakeOfficer" value="S. Sanz"></div></div>
+            <div class="two"><div><label>Account number</label><input id="account" required value="5550001234" onblur="loadAccountFromInput(false)"><button class="secondary" type="button" onclick="loadAccountFromInput(true)">Load Account</button></div><div><label>Customer name</label><input id="customer" required readonly value="New Demo Customer"></div></div><div id="accountProfileBox" class="box" style="margin-bottom:12px">Enter an account number and click Load Account to populate customer details and transaction history.</div>
+            <div class="three"><div><label>Case type</label><select id="caseTxnType" onchange="setCaseTypeWorkflow()"><option>Zelle / P2P</option><option>ACH Debit</option><option>Debit Card POS</option><option>ATM Withdrawal</option><option>Online Banking Transfer</option><option>Wire Transfer</option><option>Check</option><option>Credit Card</option></select></div><div><label>Error type</label><select id="claimType" onchange="renderClaimDynamicFields();liveCalc()"></select></div><div><label>Notice received date</label><input id="noticeDate" type="date" value="2026-06-22" onchange="liveCalc()"></div></div><div id="claimDynamicFields" class="card pad" style="margin-bottom:10px;background:#f9fafb"></div><div id="caseTypeGuide" class="notice" style="margin-bottom:10px">Select a case type to unlock the matching affidavit questions and transaction history selection.</div><div class="notice" style="margin-bottom:10px">Dates are calculated from the notice received date. The app uses the longest allowed Reg E timeline so staff can plan for a full investigation.</div>
+            <div class="between"><h3>Account Transaction History</h3><div class="row"><button class="secondary" type="button" onclick="loadAccountFromInput(true)">Refresh History</button></div></div>
+            <p class="muted">Select the disputed transaction(s) from the account history. The claim amount is calculated automatically from your selections.</p>
+            <div id="accountHistoryBox" class="box">Load an account to see transaction history.</div>
+            <div id="transactionRows" style="display:none"></div>
+            <div class="totalBox">Selected Claim Amount: <span id="transactionTotal">$0.00</span></div>
+            <div class="two"><div><label>Account age</label><select id="accountAge" onchange="liveCalc()"><option>Over 30 days</option><option>New account under 30 days</option></select></div><div><label>Foreign / outside U.S.?</label><select id="foreign" onchange="liveCalc()"><option>No</option><option>Yes</option></select></div></div>
+            <div class="two"><div><label>Access device status</label><select id="deviceStatus" onchange="liveCalc()"><option>Still in possession</option><option>Lost</option><option>Stolen</option><option>Shared credentials</option><option>Unknown</option></select></div><div><label>Prior disputes last 90 days</label><input id="prior" type="number" value="0" oninput="liveCalc()"></div></div>
+            <div id="manualOverrideBox" class="notice" style="display:none;margin-bottom:12px">
+              <h3>Officer Manual Override</h3>
+              <p>This mode lets an officer override the machine decision and rebuild the case manually.</p>
+              <div class="two"><div><label>Reg E classification override</label><select id="manualRegEStatus" onchange="liveCalc()"><option>Auto</option><option>Force Reg E</option><option>Force Non Reg E</option></select></div><div><label>Initial deadline override</label><select id="manualInitialDays" onchange="liveCalc()"><option>Auto</option><option>10</option><option>20</option></select></div></div>
+              <div class="two"><div><label>Extended deadline override</label><select id="manualExtendedDays" onchange="liveCalc()"><option>Auto</option><option>45</option><option>90</option></select></div><div><label>Manual route</label><select id="manualRoute" onchange="liveCalc()"><option>Auto</option><option>Reg E Investigation</option><option>Alternate Workflow</option><option>Fraud Escalation</option><option>Manager Review</option></select></div></div>
+              
+              <label>Override reason / officer note</label><textarea id="manualOverrideNote" rows="3" placeholder="Explain why the officer is changing the machine recommendation."></textarea>
+            </div>
+            <label>Customer statement</label><textarea id="statement" rows="4">Customer says they did not authorize this transaction.</textarea>
+            <div class="row"><button id="caseSubmitBtn" class="primary" type="submit">Create Case & Send to Officer Review</button><button id="cancelEditBtn" class="secondary" type="button" onclick="cancelEdit()" style="display:none">Cancel Edit</button></div>
+          </form>
+          <div><h3>Machine Recommendation</h3><div id="liveResult" class="box"></div><div class="notice" style="margin-top:10px">The officer will be prompted to agree or override this recommendation before the investigation starts.</div></div>
+        </div>
+      </div>
+    </section>
+    <section id="review" class="view"><div class="card pad"><div class="stickyActions between"><div><h2 id="rTitle">Case Review</h2><p class="muted" id="rSub"></p></div><div class="row" id="caseActionBar"></div></div><div id="workflowSteps"></div><div id="reviewBody"></div></div></section>
+    <section id="caseTool" class="view"><div class="card pad"><div class="between"><div><h2 id="caseToolTitle">Case Tool</h2><p class="muted" id="caseToolSub"></p></div><button class="secondary" onclick="backToCaseReview()">Back to Case</button></div><div id="caseToolBody"></div></div></section>
+    <section id="ledger" class="view"><div class="card pad"><div class="between"><div><h2>Provisional Credit Ledger</h2><p class="muted">Global review of all disputed claim debits and all provisional credits posted.</p></div><button class="secondary" onclick="setTabByIndex(0,'dashboard')">Back to Dashboard</button></div><div id="ledgerBody"></div></div></section>
+    <section id="manager" class="view"><div class="card pad"><h2>Manager Review</h2><p class="muted">The left queue only shows cases that need or have manager review while this tab is active.</p><div id="managerFilterBar" class="dashboardFilters"></div><table id="managerTable"></table></div></section>
+    <section id="audit" class="view">
+      <div class="card pad">
+        <h2>Audit Log</h2><p class="muted">Search for a case first. Open a case to see the detailed audit trail.</p>
+        <div class="dashboardFilters">
+          <div class="two">
+            <div><label>Case type</label><select id="auditTxnTypeFilter" onchange="setAuditFilter('txnType',this.value)"><option value="">All transaction types</option><option>Zelle / P2P</option><option>ACH Debit</option><option>Debit Card POS</option><option>ATM Withdrawal</option><option>Online Banking Transfer</option><option>Wire Transfer</option><option>Check</option><option>Credit Card</option></select></div>
+            <div><label>Error type</label><select id="auditClaimTypeFilter" onchange="setAuditFilter('claimType',this.value)"><option value="">All error types</option><option>Unauthorized transaction</option><option>Lost or stolen card</option><option>ATM cash not received</option><option>Duplicate transaction</option><option>Incorrect amount</option><option>Customer-authorized scam</option><option>Service not received</option></select></div>
+          </div>
+        </div>
+        <table id="auditTable"></table>
+      </div>
+    </section>
+    <section id="auditDetailView" class="view">
+      <div id="auditDetailFull" class="card pad"></div>
+    </section>
+    <section id="rules" class="view"><div class="card pad"><h2>Rules Engine</h2><div class="notice">Demo decision-support engine. The machine recommends; a human officer agrees or overrides. A real bank should have compliance/legal approve every rule.</div><table style="margin-top:14px"><tr><th>Area</th><th>Demo behavior</th></tr><tr><td>Context-aware queue</td><td>Dashboard/Review/New Case shows All/Reg E/Non Reg E queue. Manager Review shows manager-review cases. Audit Log shows audit-ready/final cases only.</td></tr><tr><td>Date filtering</td><td>Case queue and dashboard can be filtered by notice received date.</td></tr><tr><td>Audit search</td><td>Audit log uses dashboard-style search bars and requires opening a case to see event details.</td></tr><tr><td>Reg E coverage</td><td>Applies to EFTs that debit or credit a consumer account; checks and Fedwire/similar wire transfers route outside Reg E in this demo.</td></tr><tr><td>Case dates</td><td>Shows the four operational dates staff need: notice date, opened date, provisional credit deadline, and final case deadline.</td></tr><tr><td>Investigation timing</td><td>Uses 10 business days normally, 20 business days for new accounts, 45 calendar days extended, and 90 calendar days for POS/foreign/new account cases.</td></tr><tr><td>Retention</td><td>Audit-ready cases include a 2-year evidence-retention control.</td></tr></table></div></section>
+  </main>
+</div>
+<script src="script.js"></script>
+</body>
+</html>
