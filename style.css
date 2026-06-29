@@ -263,6 +263,108 @@ button.dark {
   display:inline-block
 }
 
+.compactQueueList {
+  display:grid;
+  gap:10px;
+  margin-top:12px
+}
+
+.compactCaseCard {
+  border:1px solid #e4e7ec;
+  border-radius:12px;
+  padding:12px 14px;
+  background:#f9fbff;
+  cursor:pointer;
+  transition:background .15s ease,border-color .15s ease,transform .15s ease
+}
+
+.compactCaseCard:hover {
+  background:#f2f6ff;
+  border-color:#b9d0ff
+}
+
+.compactCaseHeader {
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:8px;
+  margin-bottom:8px
+}
+
+.compactCaseTitle {
+  font-weight:700;
+  color:#172033
+}
+
+.compactCaseSubtitle {
+  margin-top:2px
+}
+
+.compactCaseDetails {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  margin-bottom:8px
+}
+
+.compactCaseDetails span {
+  display:block;
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  margin-bottom:2px
+}
+
+.compactMeta {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-bottom:8px
+}
+
+.compactMeta span {
+  background:#eef4ff;
+  color:#0f62fe;
+  border-radius:999px;
+  padding:4px 8px;
+  font-size:12px
+}
+
+.compactCaseFooter {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px
+}
+
+.compactBadge {
+  font-size:12px;
+  font-weight:700;
+  border-radius:999px;
+  padding:5px 8px;
+  background:#172033;
+  color:#fff
+}
+
+.compactBadge.blue {
+  background:#0f62fe
+}
+
+.compactBadge.green {
+  background:#22a06b
+}
+
+.compactBadge.orange {
+  background:#f79009
+}
+
+.compactEmptyState {
+  border:1px dashed #d7deea;
+  border-radius:12px;
+  padding:14px;
+  background:#fcfdff
+}
+
 .green {
   background:#ecfdf3;
   color:#027a48
