@@ -119,21 +119,11 @@
     <section id="ledger" class="view"><div class="card pad"><div class="between"><div><h2>Ledger</h2><p class="muted">Four-number ledger view: total exposure, credit at risk, losses, and recovered funds.</p></div><button class="secondary" onclick="setTabByIndex(0,'dashboard')">Back to Dashboard</button></div><div id="ledgerBody"></div></div></section>
     <section id="chargeback" class="view"><div class="card pad"><div class="between"><div><h2>Chargeback In Process</h2><p class="muted">Card cases waiting for Mastercard response after the chargeback package is filed. Expected response is tracked using the 30–50 day window.</p></div></div><div id="chargebackBody" class="compactQueueList"></div></div></section>
     <section id="recovery" class="view"><div class="card pad"><div class="between"><div><h2>Pending Recovery</h2><p class="muted">Cases closed to the customer but still pending merchant, network, ACH, receiving-bank, insurance, or other third-party recovery.</p></div></div><div id="recoveryBody" class="compactQueueList"></div></div></section>
-    <section id="manager" class="view"><div class="card pad"><h2>Manager Review</h2><p class="muted">The left queue only shows cases that need or have manager review while this tab is active.</p><div id="managerFilterBar" class="dashboardFilters"></div><div id="managerQueue" class="compactQueueList"></div></div></section>
+    <section id="manager" class="view"><div class="card pad"><h2>Manager Review</h2><p class="muted">The left queue only shows cases that need or have manager review while this tab is active.</p><div id="managerQueue" class="compactQueueList"></div></div></section>
     <section id="audit" class="view">
       <div class="card pad">
-        <h2>Closed Cases / Log</h2><p class="muted">Search closed cases. Open a case to see the detailed case log and evidence trail.</p>
-        <div class="dashboardFilters">
-          <div class="two">
-            <div><label>Case type</label><select id="auditTxnTypeFilter" onchange="setAuditFilter('txnType',this.value)"><option value="">All transaction types</option><option>Zelle / P2P</option><option>ACH Debit</option><option>Debit Card POS</option><option>ATM Withdrawal</option><option>Online Banking Transfer</option><option>Wire Transfer</option><option>Check</option><option>Credit Card</option></select></div>
-            <div><label>Error type</label><select id="auditClaimTypeFilter" onchange="setAuditFilter('claimType',this.value)"><option value="">All error types</option><option>Unauthorized transaction</option><option>Lost or stolen card</option><option>ATM cash not received</option><option>Duplicate transaction</option><option>Incorrect amount</option><option>Customer-authorized scam</option><option>Service not received</option></select></div>
-          </div>
-          <div class="two">
-            <div><label>Minimum amount</label><input id="auditMinAmount" type="number" step="0.01" min="0" placeholder="e.g. 500" oninput="setAuditFilter('minAmount', this.value)"></div>
-            <div><label>Maximum amount</label><input id="auditMaxAmount" type="number" step="0.01" min="0" placeholder="e.g. 1000" oninput="setAuditFilter('maxAmount', this.value)"></div>
-          </div>
-        </div>
-        <div class="dashboardFilters"><div><label>Daily cases opened</label><input id="auditDailyDateFilter" type="date" onchange="setAuditDailyDate(this.value)"></div></div><div id="auditTable" class="compactQueueList"></div>
+        <h2>Closed Cases / Log</h2><p class="muted">Open a case to see the detailed case log and evidence trail.</p>
+        <div id="auditTable" class="compactQueueList"></div>
       </div>
     </section>
     <section id="auditDetailView" class="view">

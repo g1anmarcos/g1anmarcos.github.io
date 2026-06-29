@@ -487,14 +487,14 @@ function matchesChargebackCase(c){
 }
 function chargebackCasePanel(c){
   let win=(c.chargebackExpectedStart&&c.chargebackExpectedEnd)?(c.chargebackExpectedStart+' to '+c.chargebackExpectedEnd):'Not calculated';
-  return '<div class="card pad" style="margin-top:12px"><div class="between"><div><h3>'+c.id+' - '+c.customer+'</h3><p class="muted">Account '+c.account+' | '+caseTxnType(c)+' | '+money(c.chargebackAmount||0)+'</p></div><button class="secondary" onclick="selectCase(&quot;'+c.id+'&quot;)">Open Full Case</button></div><table><tr><td>Chargeback status</td><td><strong>'+c.chargebackStage+'</strong></td></tr><tr><td>Filed with</td><td>'+c.chargebackNetwork+'</td></tr><tr><td>Filed date</td><td>'+c.chargebackFiledDate+'</td></tr><tr><td>Expected Mastercard response</td><td>'+win+' <span class="muted">(30–50 days)</span></td></tr><tr><td>Amount</td><td>'+money(c.chargebackAmount||0)+'</td></tr></table><div class="notice">Mastercard is contacting the merchant for representment. Record the response once Mastercard gets back to the bank.</div><div class="row"><button class="good" onclick="selectedId=&quot;'+c.id+'&quot;;recordMastercardNoRepresentment()">No Representment - Customer Keeps Credit</button><button class="primary" onclick="selectedId=&quot;'+c.id+'&quot;;recordMastercardRepresentment()">Merchant Represented / Funds Recovered</button></div><div class="box">'+(c.chargebackLetter||'No package text found.')+'</div></div>';
+  return compactCaseCard(c,{title:c.id,subtitle:c.customer+' • '+c.account,amount:money(c.chargebackAmount||0),status:c.chargebackStage||c.status,meta:[c.chargebackNetwork||'Mastercard',win+' (30–50 days)'],footer:c.chargebackFiledDate?('Filed '+c.chargebackFiledDate):'Mastercard response pending',badgeText:'Chargeback',badgeClass:'orange',actions:'<button class="good smallBtn" onclick="event.stopPropagation();selectedId=\''+c.id+'\';recordMastercardNoRepresentment()">No representment</button><button class="primary smallBtn" onclick="event.stopPropagation();selectedId=\''+c.id+'\';recordMastercardRepresentment()">Recovered</button><button class="secondary smallBtn" onclick="event.stopPropagation();selectCase(\''+c.id+'\')">Open case</button>',openHandler:"selectCase('"+c.id+"')"});
 }
 function renderChargeback(){
   let el=document.getElementById('chargebackBody');
   if(!el)return;
   let rows=getChargebackQueueCases(cases, chargebackFilters);
   el.innerHTML='<div class="notice">Cases enter this queue automatically after provisional credit is posted on a Mastercard debit/credit card dispute. Expected response is calculated as 30–50 calendar days from the filing date.</div>'
-  +(rows.map(chargebackCasePanel).join('')||'<div class="notice">No Mastercard chargebacks are currently waiting for response.</div>');
+  +(rows.length?rows.map(chargebackCasePanel).join(''):'<div class="notice">No Mastercard chargebacks are currently waiting for response.</div>');
 }
 
 function compactCaseCard(c, opts) {
@@ -508,6 +508,7 @@ function compactCaseCard(c, opts) {
   let handler = opts.openHandler || "selectCase('" + c.id + "')";
   let badgeText = opts.badgeText || '';
   let badgeClass = opts.badgeClass || '';
+  let actions = opts.actions || '';
   let badgeHtml = badgeText ? '<span class="badge ' + badgeClass + '">' + badgeText + '</span>' : badge(c);
   return '<div class="card pad" style="margin-top:12px;cursor:pointer" onclick="' + handler + '">'
     + '<div class="between"><div><strong>' + title + '</strong> ' + badgeHtml
@@ -516,6 +517,7 @@ function compactCaseCard(c, opts) {
     + (meta ? '<div class="muted mini">' + meta + '</div>' : '')
     + '</div></div>'
     + (footer ? '<div class="muted mini" style="margin-top:6px">' + footer + '</div>' : '')
+    + (actions ? '<div class="row" style="margin-top:8px">' + actions + '</div>' : '')
     + '</div>';
 }
 
@@ -568,16 +570,12 @@ function renderRecovery(){
 }
 function renderManager(){
   let rows=applySort(cases.filter(isManagerCase).filter(matchesManager),managerSort,(c,f)=>f==='caseId'?c.id:c.noticeDate);
-  let bar=document.getElementById('managerFilterBar');
-  if(bar){bar.innerHTML='<div class="three"><div><label>Case</label><input placeholder="Search case #" value="'+managerFilters.caseId+'" oninput="setManagerFilter(\'caseId\',this.value)"></div><div><label>Customer</label><input placeholder="Search customer" value="'+managerFilters.customer+'" oninput="setManagerFilter(\'customer\',this.value)"></div><div><label>Account</label><input placeholder="Search account" value="'+managerFilters.account+'" oninput="setManagerFilter(\'account\',this.value)"></div></div><div class="two"><div><label>Amount</label><input placeholder="Search amount" value="'+managerFilters.amount+'" oninput="setManagerFilter(\'amount\',this.value)"></div><div><label>Status / Final Decision</label><input placeholder="Search status or decision" value="'+managerFilters.status+'" oninput="setManagerFilter(\'status\',this.value)"></div>'}
-  renderCompactCaseCards('managerQueue', rows, 'No manager review cases match the current filters.', (c)=>compactCaseCard(c,{title:c.id,subtitle:c.customer+' • '+c.account,amount:money(c.amount),status:c.finalDecision||c.status,meta:[c.noticeDate,c.txnType||caseTxnType(c)],footer:c.finalDecision?c.finalDecision:c.status,openHandler:"selectCase('"+c.id+"')"}));
+  renderCompactCaseCards('managerQueue', rows, 'No manager review cases are available.', (c)=>compactCaseCard(c,{title:c.id,subtitle:c.customer+' • '+c.account,amount:money(c.amount),status:c.finalDecision||c.status,meta:[c.noticeDate,c.txnType||caseTxnType(c)],footer:c.finalDecision?c.finalDecision:c.status,openHandler:"selectCase('"+c.id+"')"}));
 }
 
 function renderAudit(){
   let rows=applySort(cases.filter(isAuditCase).filter(matchesAudit),auditSort,(c,f)=>f==='caseId'?c.id:c.noticeDate);
-  let daily=document.getElementById('auditDailyDateFilter');
-  if(daily&&daily.value!==auditFilters.dailyDate)daily.value=auditFilters.dailyDate||'';
-  renderCompactCaseCards('auditTable', rows, 'No closed cases match the current filters.', (c)=>{let calc=classify(c);return compactCaseCard(c,{title:c.id,subtitle:c.customer+' • '+c.account,amount:money(c.amount),status:c.status,meta:[c.lastViewedLabel||c.lastViewedAt||c.noticeDate,(calc.likelyRegE?'Reg E':'Non Reg E')],badgeText:c.auditReady?'Closed':'Review',badgeClass:c.auditReady?'green':'orange',footer:caseTxnType(c),openHandler:"openAuditCase('"+c.id+"')"})});
+  renderCompactCaseCards('auditTable', rows, 'No closed cases are available.', (c)=>{let calc=classify(c);return compactCaseCard(c,{title:c.id,subtitle:c.customer+' • '+c.account,amount:money(c.amount),status:c.status,meta:[c.lastViewedLabel||c.lastViewedAt||c.noticeDate,(calc.likelyRegE?'Reg E':'Non Reg E')],badgeText:c.auditReady?'Closed':'Review',badgeClass:c.auditReady?'green':'orange',footer:caseTxnType(c),openHandler:"openAuditCase('"+c.id+"')"})});
 }
 
 function renderAuditDetail(){let c=cases.find(x=>x.id===selectedAuditId);let el=document.getElementById('auditDetailFull')||document.getElementById('auditDetail');if(!el)return;if(!c){el.innerHTML='<div class="notice auditDetail">Select a case from the closed case table or audit queue to view detailed logs.</div>';return}let calc=classify(c);el.innerHTML='<div class="between"><div><h3>Closed Case Log: '+c.id+' - '+c.customer+'</h3><p class="muted">Account: '+c.account+' - '+c.source+' - '+(calc.likelyRegE?'Reg E':'Non Reg E')+' - Notice: '+c.noticeDate+'</p></div><div class="row"><button class="secondary" onclick="startEditCase()">Manager Edit / Override</button><button class="secondary" onclick="activeView=\'audit\';selectedAuditId=null;document.querySelectorAll(\'.view\').forEach(v=>v.classList.remove(\'active\'));document.getElementById(\'audit\').classList.add(\'active\');render()">Back to Closed Cases / Log</button></div></div>'+finderDatesHtml(c,calc)+'<table><tr><td>Status</td><td>'+c.status+'</td></tr><tr><td>Final decision</td><td>'+(c.finalDecision||'Pending')+'</td></tr><tr><td>Credit status</td><td>'+c.creditStatus+'</td></tr><tr><td>Manager reviewed</td><td>'+(c.managerReviewed?'Yes':'No')+'</td></tr><tr><td>Audit ready</td><td>'+(c.auditReady?'Yes':'No')+'</td></tr></table>'+flaggedTransactionsHtml(c)+creditLedgerHtml(c)+'<h4>Events</h4>'+c.events.map(e=>'<div class="event">'+e.text+'<div class="muted mini">'+e.time+'</div></div>').join('')+'<h4>Comments</h4>'+(c.comments.map(cm=>'<div class="comment"><strong>'+cm.author+'</strong>'+cm.text+'<div class="muted mini">'+cm.time+'</div>'+commentAttachmentsHtml(cm.attachments)+'</div>').join('')||'<p class="muted">No comments.</p>')}
