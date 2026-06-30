@@ -431,6 +431,7 @@ function openFinalDecision() {
 function finalOutcomeHelpText(outcome) {
   if (outcome === 'Recover credit given') return 'Use when the bank recovered/reversed the credit already given to the customer. This increases Funds Recovered once the case is closed.';
   if (outcome === 'Customer keeps credit') return 'Use when the customer keeps the credit and the bank is taking the loss. This increases Losses once the case is closed.';
+  if (outcome === 'NO P. Credit given') return 'Use when no provisional credit was given to the customer. The amount will be zero and not editable.';
   return 'Use when the customer is closed out and keeps the credit for now, but the bank is still waiting on outside recovery. This does not count as recovered funds unless recovery is later posted.';
 }
 function renderSimpleFinalDecisionPanel(c, exposure) {
@@ -439,7 +440,7 @@ function renderSimpleFinalDecisionPanel(c, exposure) {
   return '<div class="notice">Pick the one thing that happened. The old split between customer outcome and bank accounting outcome has been removed to prevent duplicate ledger entries.</div>'
     + '<table style="margin-top:12px"><tr><td>Total claim amount</td><td><strong>' + money(transactionTotal(getFlaggedTransactions(c))) + '</strong></td></tr><tr><td>Credit issued / ledger exposure</td><td><strong>' + money(exposure) + '</strong></td></tr><tr><td>Funds already recorded as recovered</td><td><strong>' + money(alreadyRecovered) + '</strong></td></tr><tr><td>Remaining unresolved amount</td><td><strong>' + money(remaining) + '</strong></td></tr></table>'
     + '<h3>Final Outcome</h3>'
-    + '<div class="two"><div><label>What happened?</label><select id="finalSimpleOutcome" onchange="syncSimpleFinalDecision(' + Number(exposure || 0).toFixed(2) + ')"><option>Recover credit given</option><option>Customer keeps credit</option><option>Customer keeps credit - pending recovery</option></select></div><div><label>Decision amount</label><input id="finalDecisionAmount" type="number" step="0.01" value="' + Number(exposure || 0).toFixed(2) + '" oninput="syncSimpleFinalDecision(' + Number(exposure || 0).toFixed(2) + ')"></div></div>'
+    + '<div class="two"><div><label>What happened?</label><select id="finalSimpleOutcome" onchange="syncSimpleFinalDecision(' + Number(exposure || 0).toFixed(2) + ')"><option>Recover credit given</option><option>Customer keeps credit</option><option>NO P. Credit given</option><option>Customer keeps credit - pending recovery</option></select></div><div><label>Decision amount</label><input id="finalDecisionAmount" type="number" step="0.01" value="' + Number(exposure || 0).toFixed(2) + '" oninput="syncSimpleFinalDecision(' + Number(exposure || 0).toFixed(2) + ')"></div></div>'
     + '<div id="finalOutcomeHelp" class="notice">' + finalOutcomeHelpText('Recover credit given') + '</div>'
     + '<div class="two"><div><label>Recovered amount to post now</label><input id="finalRecoveredAmount" type="number" step="0.01" value="' + Number(remaining || 0).toFixed(2) + '" oninput="syncSimpleFinalDecision(' + Number(exposure || 0).toFixed(2) + ')"></div><div><label>GL</label><select id="finalAccountingBin">' + binOptions(defaultCreditBin(caseTxnType(c))) + '</select></div></div>'
     + '<label>Final decision note</label><textarea id="finalDecisionNote" rows="4">Final decision completed. Outcome selected based on investigation results.</textarea>'
@@ -450,6 +451,15 @@ function syncSimpleFinalDecision(exposure) {
   let amount = Number(document.getElementById('finalDecisionAmount')?.value || 0);
   if (amount < 0) amount = 0;
   let help = document.getElementById('finalOutcomeHelp'); if (help) help.textContent = finalOutcomeHelpText(outcome);
+  let amountField = document.getElementById('finalDecisionAmount');
+  if (amountField) {
+    if (outcome === 'NO P. Credit given') {
+      amountField.value = '0.00';
+      amountField.disabled = true;
+    } else {
+      amountField.disabled = false;
+    }
+  }
   let rec = document.getElementById('finalRecoveredAmount');
   if (rec) {
     if (outcome === 'Recover credit given') {
@@ -466,7 +476,7 @@ function submitSimpleFinalDecision() {
   if (isFinalDecisionPosted(c)) { alert('A final decision has already been posted for this case.'); return }
   let outcome = document.getElementById('finalSimpleOutcome').value;
   let amount = Number(document.getElementById('finalDecisionAmount').value || 0);
-  if (amount <= 0) { alert('Enter the final decision amount.'); return }
+  if (outcome !== 'NO P. Credit given' && amount <= 0) { alert('Enter the final decision amount.'); return }
   let bin = normalizeGlName(document.getElementById('finalAccountingBin').value || defaultCreditBin(caseTxnType(c)));
   let note = document.getElementById('finalDecisionNote').value || 'Final decision completed.';
   let date = currentDateISO();
@@ -490,6 +500,12 @@ function submitSimpleFinalDecision() {
     c.creditStatus = 'Customer keeps credit; loss recorded ' + money(amount) + '.';
     autoNotify(c, 'Final approval notice generated and sent; customer keeps the credit.');
     c.events.push(eventObj('Final decision posted: customer keeps credit. Loss recorded ' + money(amount) + '.'));
+  } else if (outcome === 'NO P. Credit given') {
+    c.finalDecision = 'NO P. Credit given';
+    c.status = 'Final Decision Made - No Credit Given';
+    c.creditStatus = 'No provisional credit given to customer.';
+    autoNotify(c, 'Final decision notice generated and sent; no provisional credit was issued.');
+    c.events.push(eventObj('Final decision posted: NO P. Credit given. No amount charged to bank.'));
   } else {
     c.provisionalLedger.push({ date, type: 'Closed to Customer - Pending Recovery', amount, bin, description: note + ' Final outcome: customer keeps credit while bank recovery remains pending.' });
     c.finalDecision = 'Customer keeps credit - pending recovery';
