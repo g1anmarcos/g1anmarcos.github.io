@@ -731,8 +731,8 @@ const MOCK_ACCOUNTS = {
     ]
   },
   '444': {
-    customer: 'Pilar Marotta', accountAge: 'Over 30 days', foreign: 'Yes', deviceStatus: 'Stolen', prior: 0, phone: '(305) 555-0444', email: 'pilar.marotta@example.com', history: [
-      { date: '2026-06-24', type: 'Debit Card POS', merchant: 'INTERNATIONAL ONLINE SHOP', amount: 445.75 },
+    customer: 'Pilar Marotta', accountAge: 'Over 30 days', foreign: 'Yes', deviceStatus: 'Stolen', prior: 2, phone: '(305) 555-0444', email: 'pilar.marotta@example.com', history: [
+      { date: '2026-06-24', type: 'Debit Card POS', merchant: 'MAGIC CITY CASINO', amount: 54.23 },
       { date: '2026-06-23', type: 'Debit Card POS', merchant: 'AIRPORT DUTY FREE', amount: 120.40 },
       { date: '2026-06-22', type: 'Credit Card', merchant: 'HOTEL RESORT CHARGE', amount: 980.00 },
       { date: '2026-06-21', type: 'ACH Debit', merchant: 'INSURANCE ACH', amount: 210.15 }
